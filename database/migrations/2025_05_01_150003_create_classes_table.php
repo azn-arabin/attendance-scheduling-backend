@@ -13,9 +13,11 @@ return new class extends Migration
     {
         Schema::create('classes', function (Blueprint $table) {
             $table->id();
-            $table->string('topic');                     // Class topic/title
-            $table->dateTime('start_time');              // Scheduled start time
-            $table->integer('duration');                 // Duration in minutes
+            $table->foreignId('batch_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('instructor_id')->constrained('users')->cascadeOnDelete();
+            $table->string('topic');
+            $table->dateTime('start_time');
+            $table->integer('duration'); // duration in minutes
             $table->timestamps();
 
             // Index for scheduling queries

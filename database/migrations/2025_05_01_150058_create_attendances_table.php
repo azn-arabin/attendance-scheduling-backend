@@ -25,7 +25,7 @@ return new class extends Migration
             $table->timestamps();
 
             // Indexes for fast lookup: one record per student-class
-            $table->unique(['student_id', 'class_id']); // Composite unique index&#8203;:contentReference[oaicite:22]{index=22}
+            $table->unique(['student_id', 'class_id']);
             $table->index('student_id');
             $table->index('class_id');
         });

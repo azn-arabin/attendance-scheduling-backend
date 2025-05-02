@@ -19,33 +19,59 @@ class AuthController extends Controller
             return response()->json(['message' => 'Invalid credentials'], 401);
         }
 
-        return $this->respondWithToken($token);
+        $user = Auth::guard('api')->user();
+
+        return response()->json([
+            'access_token' => $token,
+            'token_type' => 'bearer',
+            'expires_in' => Auth::guard('api')->factory()->getTTL() * 60,
+            'user' => [
+                'id' => $user->id,
+                'full_name' => $user->full_name,
+                'email' => $user->email,
+                'role' => $user->role, // adjust this if you store roles differently
+                'batch' => $user->batch
+            ]
+        ]);
     }
+
 
     public function register(Request $request)
     {
-         $validated = $request->validate([
+        $validated = $request->validate([
             'full_name' => 'required|string|max:255',
             'email' => 'required|string|email|unique:users',
-            'phone' => 'required|string|unique:users',
             'gender' => 'nullable|in:male,female,other',
-            'password' => 'required|string|min:6|confirmed'
+            'batch_id' => 'required|exists:batches,id',
+            'password' => 'required|string|min:6|confirmed',
         ]);
 
         $user = User::create([
             'full_name' => $validated['full_name'],
             'email' => $validated['email'],
-            'phone' => $validated['phone'],
             'gender' => $validated['gender'] ?? null,
+            'batch_id' => $validated['batch_id'],
             'password' => Hash::make($validated['password']),
         ]);
 
-        // Generate token immediately
         $token = Auth::guard('api')->login($user);
 
-        return $this->respondWithToken($token);
+        $user = User::findOrFail($user->id);
 
+        return response()->json([
+            'access_token' => $token,
+            'token_type' => 'bearer',
+            'expires_in' => Auth::guard('api')->factory()->getTTL() * 60,
+            'user' => [
+                'id' => $user->id,
+                'full_name' => $user->full_name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'batch' => $user->batch, // null-safe access
+            ],
+        ]);
     }
+
 
     // Authenticated user info
     public function me()

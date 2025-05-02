@@ -2,13 +2,15 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SchoolClass extends Model
 {
-
+    use HasFactory;
     /**
      * The table associated with the model.
      * (Using 'classes' to avoid conflict with the PHP keyword 'class'.)
@@ -19,9 +21,7 @@ class SchoolClass extends Model
      * The attributes that are mass assignable.
      */
     protected $fillable = [
-        'topic',
-        'start_time',
-        'duration',
+        'batch_id', 'instructor_id', 'topic', 'start_time', 'duration'
     ];
 
     /**
@@ -32,11 +32,19 @@ class SchoolClass extends Model
     ];
 
     /**
-     * Batches that this class (session) belongs to.
+     * The batch this class belongs to.
      */
-    public function batches(): BelongsToMany
+    public function batch(): BelongsTo
     {
-        return $this->belongsToMany(Batch::class, 'class_batch', 'class_id', 'batch_id');
+        return $this->belongsTo(Batch::class);
+    }
+
+    /**
+     * The instructor (User) teaching this class.
+     */
+    public function instructor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'instructor_id');
     }
 
     /**
@@ -48,17 +56,11 @@ class SchoolClass extends Model
     }
 
     /**
-     * Determine if the class is currently ongoing.
+     * Students attending this class (through the attendances table).
      */
-    public function isOngoing(): bool
+    public function students(): BelongsToMany
     {
-        if (! $this->start_time) {
-            return false;
-        }
-
-        $start = $this->start_time;
-        $end = $start->copy()->addMinutes($this->duration);
-
-        return now()->between($start, $end);
+        return $this->belongsToMany(User::class, 'attendances', 'class_id', 'student_id');
     }
+
 }

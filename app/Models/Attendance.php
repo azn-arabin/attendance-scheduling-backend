@@ -28,18 +28,18 @@ class Attendance extends Model
     ];
 
     /**
-     * The student (user) associated with this attendance record.
-     */
-    public function student(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'student_id');
-    }
-
-    /**
-     * The class (session) associated with this attendance record.
+     * The class session this attendance belongs to.
      */
     public function schoolClass(): BelongsTo
     {
         return $this->belongsTo(SchoolClass::class, 'class_id');
+    }
+
+    /**
+     * The student (User) for this attendance record.
+     */
+    public function student(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'student_id');
     }
 }

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Batch extends Model
 {
@@ -19,15 +20,7 @@ class Batch extends Model
     ];
 
     /**
-     * Users (students) associated with this batch.
-     */
-    public function students(): BelongsToMany
-    {
-        return $this->belongsToMany(User::class, 'batch_student', 'batch_id', 'student_id');
-    }
-
-    /**
-     * Users (instructors) associated with this batch.
+     * Instructors teaching this batch.
      */
     public function instructors(): BelongsToMany
     {
@@ -35,10 +28,18 @@ class Batch extends Model
     }
 
     /**
-     * Classes (sessions) that are part of this batch.
+     * Students enrolled in this batch.
      */
-    public function classes(): BelongsToMany
+    public function students(): HasMany
     {
-        return $this->belongsToMany(SchoolClass::class, 'class_batch', 'batch_id', 'class_id');
+        return $this->hasMany(User::class)->where('role', 'student');
+    }
+
+    /**
+     * Classes scheduled for this batch.
+     */
+    public function classes(): HasMany
+    {
+        return $this->hasMany(SchoolClass::class);
     }
 }

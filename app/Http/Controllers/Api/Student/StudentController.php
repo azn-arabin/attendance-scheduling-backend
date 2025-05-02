@@ -17,13 +17,11 @@ class StudentController extends Controller
         $student = Auth::user();
         $now = now();
 
-        $classes = SchoolClass::whereHas('batches.students', function ($query) use ($student) {
-            $query->where('users.id', $student->id);
-        })
+        $classes = SchoolClass::where('batch_id', $student->batch_id)
             ->where('start_time', '>', $now)
+            ->with('instructor:id,full_name') // Load instructor only with name
             ->orderBy('start_time')
-            ->with('batches')
-            ->get();
+            ->paginate(10); // optional: customize pagination
 
         return response()->json(['data' => $classes]);
     }
@@ -37,12 +35,15 @@ class StudentController extends Controller
         $class = SchoolClass::findOrFail($request->class_id);
         $student = Auth::user();
         $now = Carbon::now();
+        $start = Carbon::parse($class->start_time);
+        $windowStart = $start->copy()->subMinutes(10);
+        $windowEnd = $start->copy()->addMinutes(10);
 
         // Check time window
-        $start = Carbon::parse($class->start_time)->subMinutes(10);
-        $end = Carbon::parse($class->start_time)->addMinutes(10);
-        if (!$now->between($start, $end)) {
-            return response()->json(['message' => 'You can only mark attendance within 10 minutes before or after class start time'], 403);
+        if (!$now->between($windowStart, $windowEnd)) {
+            return response()->json([
+                'message' => 'You can only mark attendance within 10 minutes before or after class start time'
+            ], 403);
         }
 
         // Prevent double attendance
@@ -54,13 +55,16 @@ class StudentController extends Controller
             return response()->json(['message' => 'Attendance already marked for this class'], 409);
         }
 
+        // Determine status
+        $status = $now->lessThanOrEqualTo($start) ? 'present' : 'late';
+
         Attendance::create([
             'student_id' => $student->id,
             'class_id' => $class->id,
-            'status' => 'present', // assume present by default
+            'status' => $status,
             'marked_at' => now(),
         ]);
 
-        return response()->json(['message' => 'Attendance marked']);
+        return response()->json(['message' => "Attendance marked as $status"]);
     }
 }

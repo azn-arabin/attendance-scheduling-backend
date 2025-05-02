@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -15,7 +16,7 @@ class User extends Authenticatable implements JWTSubject
     use HasFactory, Notifiable;
 
     protected $fillable = [
-        'full_name', 'email', 'phone', 'gender', 'role', 'password',
+        'full_name', 'email', 'password', 'gender', 'role', 'batch_id'
     ];
 
     /**
@@ -40,32 +41,37 @@ class User extends Authenticatable implements JWTSubject
     }
 
     /**
-     * The batches where the user is enrolled as a student.
+     * The batch this student belongs to (nullable).
      */
-    public function batchesAsStudent(): BelongsToMany
+    public function batch(): BelongsTo
     {
-        return $this->belongsToMany(Batch::class, 'batch_student', 'student_id', 'batch_id');
+        return $this->belongsTo(Batch::class);
     }
 
     /**
-     * The batches where the user is assigned as an instructor.
+     * The batches this instructor is assigned to.
      */
-    public function batchesAsInstructor(): BelongsToMany
+    public function batches(): BelongsToMany
     {
         return $this->belongsToMany(Batch::class, 'batch_instructor', 'instructor_id', 'batch_id');
     }
 
     /**
-     * Attendance records for the user (as a student).
+     * The classes taught by this instructor.
+     */
+    public function classes(): HasMany
+    {
+        return $this->hasMany(SchoolClass::class, 'instructor_id');
+    }
+
+    /**
+     * Attendance records for this student.
      */
     public function attendances(): HasMany
     {
         return $this->hasMany(Attendance::class, 'student_id');
     }
 
-    /**
-     * Determine if the user has a 'student' role.
-     */
     public function isStudent(): bool
     {
         return $this->role === 'student';
